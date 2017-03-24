@@ -1,0 +1,3 @@
+Species	Entrainment	Photoperiod	Thermoperiod	Light Intensity	Relative Humidity	Reference
+Setaria viridis	LDHHF	12H Day / 12 H Night	32 C Day / 32C Night	400 umol	60%	TBD
+Setaria viridis	LLHCF	24 H Day	32 C Day / 22C Night	400 umol	60%	TBD
