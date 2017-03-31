@@ -577,6 +577,7 @@ server<-function(input,output){
     })})
   
   observeEvent(input$plot.heat,{
+    pdf(NULL)
     output$circadian.expression.heat<-renderPlotly({
       #plot.input2()
       if(input$rowcol=='FALSE'){
