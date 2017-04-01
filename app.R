@@ -5,10 +5,11 @@ library(shinydashboard)
 library(reshape)
 library(reshape2)
 library(stringr)
-library(heatmaply)
 library(gridExtra)
 library(gplots)
 library(svglite)
+library(d3heatmap)
+
 
 ########################################################################################
 # Read Setaria Circadian Data In (See methods for details on generation of datatables)
@@ -150,7 +151,11 @@ ui <- dashboardPage(
       tabPanel(title="Plot Data",
                fluidRow(
                  box(title="Plot Data",width=12, solidHeader = T,status = 'info',
-                     h3("Warning: Attempting to plot too much data on line graph will be slow/unresponsive and messy."),
+                    h4(textOutput("numbergenes")),
+                    h4("We restrict plotting to 50 genes. 
+                        Please download data from 'Search and Browse Data' tab or run a local installation of", 
+                        a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"Diel Explorer"), 
+                        "if you want to graph more genes."),
                      actionButton("plot.data",label="Plot Selected Data as Line Graph"),
                      actionButton("plot.heat", label="Plot Selected Data as Heatmap" ),
                      radioButtons('colorby', 'Color Line Graph By',c(Dataset='TRUE',GENEID='FALSE'),'TRUE'),
@@ -159,7 +164,8 @@ ui <- dashboardPage(
                      downloadButton('download.plot', "Download Line Graph"),
                      downloadButton('download.heat',"Download Heatmap"),
                      plotOutput("circadian.expression.plot"),
-                     plotlyOutput("circadian.expression.heat")
+                     #plotlyOutput("circadian.expression.heat")
+                     d3heatmapOutput("circadian.expression.heat")
                 )
                )
              ),
@@ -213,7 +219,7 @@ ui <- dashboardPage(
 ########################################################################################
 # Setaria Shiny Application -server.R
 ########################################################################################
-server<-function(input,output){
+server<-function(input,output,session){
   
   #output for sample info tab #########################################################
   
@@ -375,10 +381,18 @@ server<-function(input,output){
     )
 
   #output for plot data tab ###########################################################  
+  output$numbergenes<-reactive({
+    paste(nrow(setaria.input()), "Genes are currently selected")
+  })
   
   plot.input1<-reactive({
     
-           setaria.plot1<-setaria.input()
+           setaria.graph<-setaria.input()
+           
+           if(nrow(setaria.graph)>50){
+             setaria.plot1=setaria.graph[1:50,]
+           }else{setaria.plot1=setaria.graph}
+           
            setaria.plot1$uniqueid<-NA
            setaria.plot1$uniqueid<-paste(setaria.plot1$GENEID,"-",setaria.plot1$dataset,sep="")
            
@@ -460,7 +474,12 @@ server<-function(input,output){
   
   plot.input3<-reactive({
     
-    setaria.plot1<-setaria.input()
+    setaria.graph<-setaria.input()
+    
+    if(nrow(setaria.graph)>50){
+      setaria.plot1=setaria.graph[1:50,]
+    }else{setaria.plot1=setaria.graph}
+    
     setaria.plot1$uniqueid<-NA
     setaria.plot1$uniqueid<-paste(setaria.plot1$GENEID,"-",setaria.plot1$dataset,sep="")
     
@@ -506,23 +525,32 @@ server<-function(input,output){
       rownames(setaria.all.matrix)<-setaria.all$uniqueid
       return(setaria.all.matrix)}
     })
+  
+  plot.input2<-reactive({
+    setaria.matrix=plot.input3()
+    #pdf(NULL)
+    output$circadian.expression.heat<-renderD3heatmap({
+      if(input$rowcol=='FALSE'){
+        color.palette = colorRampPalette(c("lightyellow","lightblue","blue"),space="rgb")
+        d3heatmap(setaria.matrix, scale="column",dendrogram = "none",margins=c(40, 200), color=color.palette(256))
+      }else{
+        color.palette = colorRampPalette(c("lightyellow","lightblue","blue"),space="rgb")
+        d3heatmap(setaria.matrix, scale="row",dendrogram = "none",margins=c(40, 200),color=color.palette(256))
+      }})
+  })
 
   observeEvent(input$plot.data,{
     output$circadian.expression.plot<-renderPlot({
-      grid.arrange(plot.input1(),ncol=1)
+      withProgress(message = 'Making plot', value =NULL, {
+        incProgress()
+        grid.arrange(plot.input1(),ncol=1)
+        })
     })})
   
   observeEvent(input$plot.heat,{
-    pdf(NULL)
-    output$circadian.expression.heat<-renderPlotly({
-      #plot.input2()
-      if(input$rowcol=='FALSE'){
-        color.palette = colorRampPalette(c("darkorange1","lightyellow","blue"),space="rgb")
-        heatmaply(plot.input3(), scale="column",dendrogram = "none",margins=c(40, 200),grid_color = "grey", colors=color.palette(256))
-      }else{
-        color.palette = colorRampPalette(c("darkorange1","lightyellow","blue"),space="rgb")
-        heatmaply(plot.input3(), scale="row",dendrogram = "none",margins=c(40, 200),grid_color = "grey",colors=color.palette(256))
-      }
+    withProgress(message='Making Heatmap', value=NULL,{
+    incProgress()
+    plot.input2()
     })})
   
   output$download.plot <- downloadHandler(
@@ -534,8 +562,8 @@ server<-function(input,output){
   output$download.heat <- downloadHandler(
     filename = function() { paste('circadian_plot_',strftime(Sys.time(),"%m-%d-%y_%H%M%S"),".pdf", sep='') },
     content=function(file){
-      color.palette = colorRampPalette(c("darkorange1","lightyellow","blue"),space="rgb")
-      if(input$rowcol=='FALSE'){scale1="column"}else{scale1="row"}
+      color.palette = colorRampPalette(c("lightyellow","lightblue","blue"),space="rgb")
+      if(input$rowcol=='FALSE'){scale1="column"}else{scale1="none"}
       pdf(file, width=8, height=7, useDingbats =FALSE)
       heatmap.2(plot.input3(),
                 Rowv=FALSE,
@@ -553,8 +581,6 @@ server<-function(input,output){
       dev.off()
     },contentType='image/pdf')
   
-  #output for add data tab ############################################################  
-
 }
 
 ########################################################################################
