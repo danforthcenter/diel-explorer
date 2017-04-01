@@ -152,7 +152,7 @@ ui <- dashboardPage(
                fluidRow(
                  box(title="Plot Data",width=12, solidHeader = T,status = 'info',
                     h4(textOutput("numbergenes")),
-                    h4("We restrict plotting to 50 genes. 
+                    h4("We restrict plotting to 100 genes. 
                         Please download data from 'Search and Browse Data' tab or run a local installation of", 
                         a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"Diel Explorer"), 
                         "if you want to graph more genes."),
@@ -389,8 +389,8 @@ server<-function(input,output,session){
     
            setaria.graph<-setaria.input()
            
-           if(nrow(setaria.graph)>50){
-             setaria.plot1=setaria.graph[1:50,]
+           if(nrow(setaria.graph)>100){
+             setaria.plot1=setaria.graph[1:100,]
            }else{setaria.plot1=setaria.graph}
            
            setaria.plot1$uniqueid<-NA
@@ -476,8 +476,8 @@ server<-function(input,output,session){
     
     setaria.graph<-setaria.input()
     
-    if(nrow(setaria.graph)>50){
-      setaria.plot1=setaria.graph[1:50,]
+    if(nrow(setaria.graph)>100){
+      setaria.plot1=setaria.graph[1:100,]
     }else{setaria.plot1=setaria.graph}
     
     setaria.plot1$uniqueid<-NA
