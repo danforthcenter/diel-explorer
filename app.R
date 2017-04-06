@@ -16,8 +16,8 @@ library(d3heatmap)
 # See setaria-circadian.R script for how data was cleaned up / normalized
 ########################################################################################
 
-ldhhf.llhcf<-read.table(file='data/setaria-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-ldhhf.llhcf.norm<-read.table(file='data/setaria-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+ldhhf.llhcf<-read.table(file='data/setaria-24-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+ldhhf.llhcf.norm<-read.table(file='data/setaria-24-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 entrainment<-read.table(file='data/entrainment.information.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 
 ########################################################################################

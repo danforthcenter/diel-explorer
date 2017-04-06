@@ -7,7 +7,7 @@ library(reshape2)
 library(reshape)
 library(stringr)
 
-setwd("/Users/mgehan/Documents/setaria/setaria-circadian/diel-explorer-112016/")
+setwd("/Users/mgehan/Documents/github/diel-explorer/")
 
 ldhhf<-read.table(file='data/JTK.LDHHF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 llhcf<-read.table(file='data/JTK.LLHCF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
