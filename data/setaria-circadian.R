@@ -9,8 +9,8 @@ library(stringr)
 
 setwd("/Users/mgehan/Documents/github/diel-explorer/")
 
-ldhhf<-read.table(file='data/JTK.LDHHF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-llhcf<-read.table(file='data/JTK.LLHCF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+ldhhf<-read.table(file='data/JTK-24.LDHHF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+llhcf<-read.table(file='data/JTK-24.LLHCF.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 annotation<-read.table(file='data/setaria-annotation.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 
 ldhhf$dataset<-"ldhhf"
@@ -20,7 +20,7 @@ ldhhf.llhcf<-rbind(ldhhf,llhcf)
 
 ldhhf.llhcf$species<-"setaria.viridis"
 
-circadian.annotation<-merge(ldhhf.llhcf,annotation,by.x="GENEID",by.y="transcriptName", all.x=TRUE)
+circadian.annotation<-merge(ldhhf.llhcf,annotation,by.x="Probe",by.y="transcriptName", all.x=TRUE)
 ldhhf.llhcf<-circadian.annotation
 ldhhf.llhcf$ortholog<-NA
 ldhhf.llhcf$ortholog<-paste(ldhhf.llhcf$Best.hit.arabi.name,ldhhf.llhcf$Best.hit.rice.name,sep=",")
@@ -95,7 +95,7 @@ ldhhf.llhcf$max.rep1<-apply(ldhhf.llhcf.max1,1,max)
 ldhhf.llhcf$max.rep2<-NA
 ldhhf.llhcf$max.rep2<-apply(ldhhf.llhcf.max2,1,max)
 
-write.table(ldhhf.llhcf, file="data/setaria-ldhhf.llhcf.txt",quote=FALSE,sep='\t')
+write.table(ldhhf.llhcf, file="data/setaria-24-ldhhf.llhcf.txt",quote=FALSE,sep='\t')
 
 ldhhf.llhcf.norm<-subset(ldhhf.llhcf, select=-c(ZT02_rep1,ZT04_rep1,ZT06_rep1,ZT08_rep1,ZT10_rep1,ZT12_rep1,
                                         ZT14_rep1,ZT16_rep1,ZT18_rep1,ZT20_rep1,ZT22_rep1,ZT24_rep1,ZT26_rep1,
@@ -155,5 +155,5 @@ ldhhf.llhcf.norm<- transform(ldhhf.llhcf.norm, ZT44_rep2= (ldhhf.llhcf$ZT44_rep2
 ldhhf.llhcf.norm<- transform(ldhhf.llhcf.norm, ZT46_rep2= (ldhhf.llhcf$ZT46_rep2)/(ldhhf.llhcf$max.rep2))
 ldhhf.llhcf.norm<- transform(ldhhf.llhcf.norm, ZT48_rep2= (ldhhf.llhcf$ZT48_rep2)/(ldhhf.llhcf$max.rep2))
 
-write.table(ldhhf.llhcf.norm, file="data/setaria-ldhhf.llhcf.norm.txt",quote=FALSE,sep='\t')
+write.table(ldhhf.llhcf.norm, file="data/setaria-24-ldhhf.llhcf.norm.txt",quote=FALSE,sep='\t')
 
