@@ -17,6 +17,8 @@ http://shiny.danforthcenter.org/diel-explorer/
 
 
 Citations:
+Hughes, M.E., Hogenesch, J.B., and Kornacker, K. (2010). JTK_CYCLE: an efficient nonparametric algorithm for detecting rhythmic components in genome-scale data sets. J. Biol. Rhythms 25, 372–380.
+
 Edgar R, Domrachev M, Lash AE.
 Gene Expression Omnibus: NCBI gene expression and hybridization array data repository
 Nucleic Acids Res. 2002 Jan 1;30(1):207-10
