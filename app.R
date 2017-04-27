@@ -36,6 +36,7 @@ ui <- dashboardPage(
       ########################################################################################
       tabPanel(title="Welcome",
            fluidRow(
+             tags$head(includeScript("google-analytics.js")),
              box(title="Diel Explorer",width=12, solidHeader = T,status = 'primary',
                  p("This tool is brought to you by the",a(href="http://www.gehan-lab.org/",target='_blank',"Gehan Lab"),
                    "at the Donald Danforth Plant Science Center. For the code used to generate this app,
@@ -45,7 +46,7 @@ ui <- dashboardPage(
                  actionButton("rawdata","Go to Raw Data",icon=icon("th"),
                               onclick ="window.open('https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97739', '_blank')")
                  
-                ),
+                 ),
              
              box(title="Using this Tool",width=12, solidHeader = T,status = 'primary',
                   p("In the SAMPLE INFO tab see the available datasets and conditions"),
