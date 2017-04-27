@@ -40,7 +40,7 @@ ui <- dashboardPage(
                  p("This tool is brought to you by the",a(href="http://www.gehan-lab.org/",target='_blank',"Gehan Lab"),
                    "at the Donald Danforth Plant Science Center. For the code used to generate this app,
                    please visit ", a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"our Github"),". For more information on how the data was processed please refer
-                   to XXXXX(Pub/Preprint). To download the raw data go here:"),
+                   to", a(href="http://biorxiv.org/content/early/2017/04/26/131185",target='_blank',"doi: https://doi.org/10.1101/131185"),". To download the raw data go here:"),
                  
                  actionButton("rawdata","Go to Raw Data",icon=icon("th"),
                               onclick ="window.open('https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97739', '_blank')")
