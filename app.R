@@ -9,210 +9,223 @@ library(gridExtra)
 library(gplots)
 library(svglite)
 library(d3heatmap)
+library(shinyjs)
 
+load_data <- function() {
+  hide("loading_page")
+  show("mainTabsetPanel")
+}
 
 ########################################################################################
 # Read Setaria Circadian Data In (See methods for details on generation of datatables)
 # See setaria-circadian.R script for how data was cleaned up / normalized
 ########################################################################################
 
-ldhhf.llhcf<-read.table(file='data/setaria-24-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-ldhhf.llhcf.norm<-read.table(file='data/setaria-24-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-entrainment<-read.table(file='data/entrainment.information.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+ldhhf.llhcf<-read.csv(file='data/setaria-24-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+ldhhf.llhcf.norm<-read.csv(file='data/setaria-24-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+entrainment<-read.csv(file='data/entrainment.information.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
 
 ########################################################################################
 # Setaria Shiny Application -ui.R
 ########################################################################################
 ui <- dashboardPage(
-  
+
   dashboardHeader(title="Diel Explorer"),
 
   dashboardSidebar(disable = T),
-
+  
   dashboardBody(
-    
-    tabsetPanel(
-      
-      ########################################################################################
-      tabPanel(title="Welcome",
-           fluidRow(
-             tags$head(includeScript("google-analytics.js")),
-             box(title="Diel Explorer",width=12, solidHeader = T,status = 'primary',
-                 p("This tool is brought to you by the",a(href="http://www.gehan-lab.org/",target='_blank',"Gehan Lab"),
-                   "at the Donald Danforth Plant Science Center. For the code used to generate this app,
-                   please visit ", a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"our Github"),". For more information on how the data was processed please refer
-                   to", a(href="http://biorxiv.org/content/early/2017/04/26/131185",target='_blank',"doi: https://doi.org/10.1101/131185"),". To download the raw data go here:"),
+    useShinyjs(),
+    div(
+      id = "loading_page",
+      h1("Loading...")
+    ),
+    hidden(
+      div(id="mainTabsetPanel",
+        tabsetPanel(
+          
+          ########################################################################################
+          tabPanel(title="Welcome",
+               fluidRow(
+                 tags$head(includeScript("google-analytics.js")),
+                 box(title="Diel Explorer",width=12, solidHeader = T,status = 'primary',
+                     p("This tool is brought to you by the",a(href="http://www.gehan-lab.org/",target='_blank',"Gehan Lab"),
+                       "at the Donald Danforth Plant Science Center. For the code used to generate this app,
+                       please visit ", a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"our Github"),". For more information on how the data was processed please refer
+                       to", a(href="http://biorxiv.org/content/early/2017/04/26/131185",target='_blank',"doi: https://doi.org/10.1101/131185"),". To download the raw data go here:"),
+                     
+                     actionButton("rawdata","Go to Raw Data",icon=icon("th"),
+                                  onclick ="window.open('https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97739', '_blank')")
+                     
+                     ),
                  
-                 actionButton("rawdata","Go to Raw Data",icon=icon("th"),
-                              onclick ="window.open('https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE97739', '_blank')")
-                 
-                 ),
-             
-             box(title="Using this Tool",width=12, solidHeader = T,status = 'primary',
-                  p("In the SAMPLE INFO tab see the available datasets and conditions"),
-                  hr(),
-                  p("In the SEARCH AND BROWSE DATA tab above, you can search for genes of interest using  by either
-                  the search bar or by uploading a .txt file with gene ids. Alternatively, you can use the data filters
-                  to browse the data.Once you have loaded or searched for your selections the data can be viewed and dowloaded. 
-                  A plot of the data can be seen on the Plot Data tab once the plot button is hit.
-                  Warning: asking to plot a large line graph is messy, we would suggest switching to a heatmap"),
-                  hr(),
-                  p("In the PLOT DATA tab above, data selected from Select Data or Browse Data tabs is plotted"),
-                  hr(),
-                  p("In the ADDING YOUR OWN DATA tab above, we briefly describe how to alter this Shiny App so you
-                    can graph your own timecourse data.")
-                )
-               )
-              ),
-      ########################################################################################
-      tabPanel(title="Sample Info",
-               fluidRow(
-                 box(title="Sample Info",width=12, solidHeader = T,status = 'danger',
-                     p("Notes for Reference XXX: Setaria viridis was grown for 10 days then released into constant conditions for circadian sampling
-                     every 2 hours for 48 hours. Again, for more details sampling conditions, please refer to XXXXX(Pub/Preprint).
-                     The two entrainment conditions for this experimental set are as follows:"),
-                     dataTableOutput("conditions.table")
-                 )
-               )
-      ),
-      ########################################################################################
-      tabPanel(title="Search and Browse Data",
-               fluidRow(
-                 box(title="Search Data with GENEID or GO",width=12, solidHeader = T,status = 'success',collapsible = TRUE, collapsed = TRUE,
-                     h4("Search using small sets of GENEIDs"),
-                     p("GENEIDs, Orthologs, or GO separated by a comma are allowed"),
-                     textInput('gene_search_text', label="example: Sevir.2G310200.1, Sevir.1G000100.1", value = ""),
-                     h4("Search using small sets of GO TERMS"),
-                     textInput('go_search_text', label="example:GO:GO:0008270", value = ""),
-                     h4("Search using small sets of ORTHOLOG GENEIDs"),
-                     textInput('orth_search_text', label="example:AT3G17930.1,LOC_Os01g59080.1", value = ""),
-                     p("refresh page to clear search")
-                 )),
-               
-               fluidRow(
-                 box(title="Search Data with File",width=12, solidHeader = T,status = 'success',collapsible = TRUE,collapsed=TRUE,
-                     h4("Upload a file of GENEIDs, the GENEIDs should not be quoted, one line per geneid"),
-                     fileInput('file.geneid', 'Choose file to upload',
-                               accept = c('text/csv','text/comma-separated-values','text/tab-separated-values','text/plain', '.csv','.tsv')),
-                     checkboxInput('header', 'Header', FALSE),
-                     h4("Upload a file of ORTHOLOG GENEIDs, the ORTHOLOG GENEIDs should not be quoted, one line per geneid"),
-                     fileInput('file.ortholog', 'Choose file to upload',
-                               accept = c('text/csv','text/comma-separated-values','text/tab-separated-values','text/plain', '.csv','.tsv')),
-                     checkboxInput('header1', 'Header', FALSE),
-                     p("refresh page to clear search")
-                 )),
-               fluidRow(
-                 box(title="Genes, Orthologs, or GO Selected with Search",width=12, solidHeader = T,status = 'success',collapsible = TRUE,collapsed =TRUE,
-                     verbatimTextOutput("selected.genes"),
-                     verbatimTextOutput("selected.orthologs"),
-                     verbatimTextOutput("selected.go")
+                 box(title="Using this Tool",width=12, solidHeader = T,status = 'primary',
+                      p("In the SAMPLE INFO tab see the available datasets and conditions"),
+                      hr(),
+                      p("In the SEARCH AND BROWSE DATA tab above, you can search for genes of interest using  by either
+                      the search bar or by uploading a .txt file with gene ids. Alternatively, you can use the data filters
+                      to browse the data.Once you have loaded or searched for your selections the data can be viewed and dowloaded. 
+                      A plot of the data can be seen on the Plot Data tab once the plot button is hit.
+                      Warning: asking to plot a large line graph is messy, we would suggest switching to a heatmap"),
+                      hr(),
+                      p("In the PLOT DATA tab above, data selected from Select Data or Browse Data tabs is plotted"),
+                      hr(),
+                      p("In the ADDING YOUR OWN DATA tab above, we briefly describe how to alter this Shiny App so you
+                        can graph your own timecourse data.")
+                    )
+                   )
+                  ),
+          ########################################################################################
+          
+          tabPanel(title="Sample Info",
+                   fluidRow(
+                     box(title="Sample Info",width=12, solidHeader = T,status = 'danger',
+                         p("Notes for Reference XXX: Setaria viridis was grown for 10 days then released into constant conditions for circadian sampling
+                         every 2 hours for 48 hours. Again, for more details sampling conditions, please refer to XXXXX(Pub/Preprint).
+                         The two entrainment conditions for this experimental set are as follows:"),
+                         dataTableOutput("conditions.table")
+                     )
+                   )
+          ),
+          ########################################################################################
+          
+          tabPanel(title="Search and Browse Data",
+                   fluidRow(
+                     box(title="Search Data with GENEID or GO",width=12, solidHeader = T,status = 'success',collapsible = TRUE, collapsed = TRUE,
+                         h4("Search using small sets of GENEIDs"),
+                         p("GENEIDs, Orthologs, or GO separated by a comma are allowed"),
+                         textInput('gene_search_text', label="example: Sevir.2G310200.1, Sevir.1G000100.1", value = ""),
+                         h4("Search using small sets of GO TERMS"),
+                         textInput('go_search_text', label="example:GO:GO:0008270", value = ""),
+                         h4("Search using small sets of ORTHOLOG GENEIDs"),
+                         textInput('orth_search_text', label="example:AT3G17930.1,LOC_Os01g59080.1", value = ""),
+                         p("refresh page to clear search")
                      )),
-               fluidRow(
-                 box(title="Browse and Filter Data",width=12, solidHeader = T,status = 'success',
-                     fluidRow(
-                            column(3,
-                                   radioButtons('data.norm', 'Normalize Data',c(Yes='TRUE',NO='FALSE'),'TRUE')),
-                            column(3,
-                                    selectInput("species1",
-                                                "Species:",
-                                                c("All", 
-                                                 sort(unique(as.character(ldhhf.llhcf$species)))))),
-                            column(3,
-                                   selectInput("dataset1",
-                                               "Entrainment:",
-                                               c("All", 
-                                                 sort(unique(as.character(ldhhf.llhcf$dataset)))))),
-                            column(3,
-                                   selectInput("bhq.cutoff1",
-                                               "Benjamini-Hochberg Q-Value:",
-                                               c("All",sort(unique((ldhhf.llhcf$bhq.cutoff)))))),
-                            column(3,
-                                   selectInput("adjp.cutoff1",
-                                               "Adjusted P-Value:",
-                                               c("All",sort(unique((ldhhf.llhcf$adjp.cutoff)))))),
-                            column(3,
-                                   selectInput("period1",
-                                               "Period:",
-                                               c("All",
-                                                 sort(unique(as.character(ldhhf.llhcf$PERIOD)))))),
-                            column(3,
-                                   selectInput("lag1",
-                                               "Lag (Phase):",
-                                               c("All",
-                                                 sort(unique(as.character(ldhhf.llhcf$LAG)))))),
-                            
-                            column(3,
-                                   downloadButton('download.selected', "Download Selected Data"))
-                            ),
-                          div(style = 'overflow-x: scroll', dataTableOutput("setaria.data"))
-                  )
-                 )
+                   
+                   fluidRow(
+                     box(title="Search Data with File",width=12, solidHeader = T,status = 'success',collapsible = TRUE,collapsed=TRUE,
+                         h4("Upload a file of GENEIDs, the GENEIDs should not be quoted, one line per geneid"),
+                         fileInput('file.geneid', 'Choose file to upload',
+                                   accept = c('text/csv','text/comma-separated-values','text/tab-separated-values','text/plain', '.csv','.tsv')),
+                         checkboxInput('header', 'Header', FALSE),
+                         h4("Upload a file of ORTHOLOG GENEIDs, the ORTHOLOG GENEIDs should not be quoted, one line per geneid"),
+                         fileInput('file.ortholog', 'Choose file to upload',
+                                   accept = c('text/csv','text/comma-separated-values','text/tab-separated-values','text/plain', '.csv','.tsv')),
+                         checkboxInput('header1', 'Header', FALSE),
+                         p("refresh page to clear search")
+                     )),
+                   fluidRow(
+                     box(title="Genes, Orthologs, or GO Selected with Search",width=12, solidHeader = T,status = 'success',collapsible = TRUE,collapsed =TRUE,
+                         verbatimTextOutput("selected.genes"),
+                         verbatimTextOutput("selected.orthologs"),
+                         verbatimTextOutput("selected.go")
+                         )),
+                   fluidRow(
+                     box(title="Browse and Filter Data",width=12, solidHeader = T,status = 'success',
+                         fluidRow(
+                                column(3,
+                                       radioButtons('data.norm', 'Normalize Data',c(Yes='TRUE',NO='FALSE'),'TRUE')),
+                                column(3,
+                                        selectInput("species1",
+                                                    "Species:",
+                                                    c("All", 
+                                                     sort(unique(as.character(ldhhf.llhcf$species)))))),
+                                column(3,
+                                       selectInput("dataset1",
+                                                   "Entrainment:",
+                                                   c("All", 
+                                                     sort(unique(as.character(ldhhf.llhcf$dataset)))))),
+                                column(3,
+                                       selectInput("bhq.cutoff1",
+                                                   "Benjamini-Hochberg Q-Value:",
+                                                   c("All",sort(unique((ldhhf.llhcf$bhq.cutoff)))))),
+                                column(3,
+                                       selectInput("adjp.cutoff1",
+                                                   "Adjusted P-Value:",
+                                                   c("All",sort(unique((ldhhf.llhcf$adjp.cutoff)))))),
+                                column(3,
+                                       selectInput("period1",
+                                                   "Period:",
+                                                   c("All",
+                                                     sort(unique(as.character(ldhhf.llhcf$PERIOD)))))),
+                                column(3,
+                                       selectInput("lag1",
+                                                   "Lag (Phase):",
+                                                   c("All",
+                                                     sort(unique(as.character(ldhhf.llhcf$LAG)))))),
+                                
+                                column(3,
+                                       downloadButton('download.selected', "Download Selected Data"))
+                                ),
+                              div(style = 'overflow-x: scroll', dataTableOutput("setaria.data"))
+                      )
+                     )
+                    ),
+          ########################################################################################
+          tabPanel(title="Plot Data",
+                   fluidRow(
+                     box(title="Plot Data",width=12, solidHeader = T,status = 'info',
+                        h4(textOutput("numbergenes")),
+                        h4("We restrict plotting to 100 genes. 
+                            Please download data from 'Search and Browse Data' tab or run a local installation of", 
+                            a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"Diel Explorer"), 
+                            "if you want to graph more genes."),
+                         actionButton("plot.data",label="Plot Selected Data as Line Graph"),
+                         actionButton("plot.heat", label="Plot Selected Data as Heatmap" ),
+                         radioButtons('colorby', 'Color Line Graph By',c(Dataset='TRUE',GENEID='FALSE'),'TRUE'),
+                         radioButtons('rowcol', 'Scale Heatmap',c(Row='TRUE',Column='FALSE'),'TRUE'),
+                         radioButtons('average', 'Average Replicates',c(Yes='TRUE',No='FALSE'),'TRUE'),
+                         downloadButton('download.plot', "Download Line Graph"),
+                         downloadButton('download.heat',"Download Heatmap"),
+                         plotOutput("circadian.expression.plot"),
+                         d3heatmapOutput("circadian.expression.heat")
+                    )
+                   )
+                 ),
+          ########################################################################################
+          tabPanel(title="Adding Your Own Data",
+                   fluidRow(
+                     box(title="Adding Your Own Data",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
+                         p(" We encourage you to use this frame work to explore your own data and hope that you will add it to the
+                           public repository as well. If you have any problems adding your own data or with the exisiting data,
+                           please ", a(href="https://github.com/maliagehan/diel-explorer/issues",target='_blank',"contact us"),". The following are 
+                           the basic steps to add data.")
+                     )),
+                   fluidRow(
+                     box(title="STEP 1:Data Format",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
+                         p("This takes in the resulting output of ",a(href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/",target='_blank',"JTK Cycle"),
+                           ". For more information on the parameters used to process data with JTK Cycle, please refer to XXX (preprint/pub).
+                           The resulting .txt files are then further processed in Step 2.")
+                     )),
+                   fluidRow(
+                     box(title="STEP2: Add Data and Format Further",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
+                         p("Your sampling frequencing and headers may differ from ours. So you can alter your naming scheme to match ours, 
+                           (if it makes sense to) or you might need to replace your data with ours. Replacing our data with yours is a bit more involved, because,
+                           it will change the header names for the graphing steps downstream. For now we will assume that your data headers are like ours.
+                           There is a R script in the data folder called setaria-circadian.R. The setaria-circadian.R script was used to add some additional information to the JTK Cycle output. 
+                           For example, two JTK Cycle outputs were joined together with an rbind step then merged with an annotation file. 
+                           We add in columns for species name, categories for BH.Q and ADJ.P, and then find the maximum expression
+                           value per replicate so that normalized data can be calculated. Once all of these things are done, we have have the raw (expression values not normalized to maximum)
+                           and relative/normalized expression data tables that are used as input data. Once you add the necessary columns your dataset, you could rbind it to to the Setaria dataset
+                           and reload the app.")
+                     )),
+                   fluidRow(
+                     box(title="STEP3: Add Sample Info",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
+                         p("There is a file called entrainment.information.txt. Add a row to that file with your sample information and save it.")
+                     ))
                 ),
-      ########################################################################################
-      tabPanel(title="Plot Data",
-               fluidRow(
-                 box(title="Plot Data",width=12, solidHeader = T,status = 'info',
-                    h4(textOutput("numbergenes")),
-                    h4("We restrict plotting to 100 genes. 
-                        Please download data from 'Search and Browse Data' tab or run a local installation of", 
-                        a(href="https://github.com/maliagehan/diel-explorer/",target='_blank',"Diel Explorer"), 
-                        "if you want to graph more genes."),
-                     actionButton("plot.data",label="Plot Selected Data as Line Graph"),
-                     actionButton("plot.heat", label="Plot Selected Data as Heatmap" ),
-                     radioButtons('colorby', 'Color Line Graph By',c(Dataset='TRUE',GENEID='FALSE'),'TRUE'),
-                     radioButtons('rowcol', 'Scale Heatmap',c(Row='TRUE',Column='FALSE'),'TRUE'),
-                     radioButtons('average', 'Average Replicates',c(Yes='TRUE',No='FALSE'),'TRUE'),
-                     downloadButton('download.plot', "Download Line Graph"),
-                     downloadButton('download.heat',"Download Heatmap"),
-                     plotOutput("circadian.expression.plot"),
-                     #plotlyOutput("circadian.expression.heat")
-                     d3heatmapOutput("circadian.expression.heat")
+          ########################################################################################
+          tabPanel(title="Contact Us",
+                   fluidRow(
+                     box(title="Contact US",width=12, solidHeader = T,status = 'danger',
+                         p("For questions or if you are interested in adding your own data contact ",
+                           a(href="https://github.com/maliagehan/diel-explorer/issues",target='_blank',"Malia Gehan")),
+                         p("For mor information on the Gehan lab visit our ",
+                           a(href="http://www.gehan-lab.org/",target='_blank',"website"))
+                     )
+                   )
                 )
-               )
-             ),
-      ########################################################################################
-      tabPanel(title="Adding Your Own Data",
-               fluidRow(
-                 box(title="Adding Your Own Data",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
-                     p(" We encourage you to use this frame work to explore your own data and hope that you will add it to the
-                       public repository as well. If you have any problems adding your own data or with the exisiting data,
-                       please ", a(href="https://github.com/maliagehan/diel-explorer/issues",target='_blank',"contact us"),". The following are 
-                       the basic steps to add data.")
-                 )),
-               fluidRow(
-                 box(title="STEP 1:Data Format",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
-                     p("This takes in the resulting output of ",a(href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/",target='_blank',"JTK Cycle"),
-                       ". For more information on the parameters used to process data with JTK Cycle, please refer to XXX (preprint/pub).
-                       The resulting .txt files are then further processed in Step 2.")
-                 )),
-               fluidRow(
-                 box(title="STEP2: Add Data and Format Further",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
-                     p("Your sampling frequencing and headers may differ from ours. So you can alter your naming scheme to match ours, 
-                       (if it makes sense to) or you might need to replace your data with ours. Replacing our data with yours is a bit more involved, because,
-                       it will change the header names for the graphing steps downstream. For now we will assume that your data headers are like ours.
-                       There is a R script in the data folder called setaria-circadian.R. The setaria-circadian.R script was used to add some additional information to the JTK Cycle output. 
-                       For example, two JTK Cycle outputs were joined together with an rbind step then merged with an annotation file. 
-                       We add in columns for species name, categories for BH.Q and ADJ.P, and then find the maximum expression
-                       value per replicate so that normalized data can be calculated. Once all of these things are done, we have have the raw (expression values not normalized to maximum)
-                       and relative/normalized expression data tables that are used as input data. Once you add the necessary columns your dataset, you could rbind it to to the Setaria dataset
-                       and reload the app.")
-                 )),
-               fluidRow(
-                 box(title="STEP3: Add Sample Info",width=12, solidHeader = T,status = 'warning',collapsible = TRUE,
-                     p("There is a file called entrainment.information.txt. Add a row to that file with your sample information and save it.")
-                 ))
-            ),
-      ########################################################################################
-      tabPanel(title="Contact Us",
-               fluidRow(
-                 box(title="Contact US",width=12, solidHeader = T,status = 'danger',
-                     p("For questions or if you are interested in adding your own data contact ",
-                       a(href="https://github.com/maliagehan/diel-explorer/issues",target='_blank',"Malia Gehan")),
-                     p("For mor information on the Gehan lab visit our ",
-                       a(href="http://www.gehan-lab.org/",target='_blank',"website"))
-                 )
-               )
-            )
+        ))
     )
   )
 )
@@ -222,8 +235,8 @@ ui <- dashboardPage(
 ########################################################################################
 server<-function(input,output,session){
   
-  #output for sample info tab #########################################################
-  
+  #output for sample info tab ########################################################
+    
   output$conditions.table<-renderDataTable(entrainment, options=list(paging=FALSE,searching=FALSE))
   
   #output for select data tab #########################################################
@@ -582,6 +595,8 @@ server<-function(input,output,session){
       dev.off()
     },contentType='image/pdf')
   
+  hide(id = "loading_page", anim = TRUE, animType = "fade")    
+  show("mainTabsetPanel")
 }
 
 ########################################################################################
