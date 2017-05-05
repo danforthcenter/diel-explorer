@@ -21,9 +21,13 @@ load_data <- function() {
 # See setaria-circadian.R script for how data was cleaned up / normalized
 ########################################################################################
 
-ldhhf.llhcf<-read.csv(file='data/setaria-24-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-ldhhf.llhcf.norm<-read.csv(file='data/setaria-24-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
-entrainment<-read.csv(file='data/entrainment.information.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+#ldhhf.llhcf<-read.csv(file='data/setaria-24-ldhhf.llhcf.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+#ldhhf.llhcf.norm<-read.csv(file='data/setaria-24-ldhhf.llhcf.norm.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+#entrainment<-read.csv(file='data/entrainment.information.txt',sep='\t',header=TRUE, stringsAsFactors = FALSE,strip.white = TRUE)
+
+ldhhf.llhcf<-readRDS('data/setaria-24-ldhhf.llhcf.rds')
+ldhhf.llhcf.norm<-readRDS('data/setaria-24-ldhhf.llhcf.norm.rds')
+entrainment<-readRDS('data/entrainment.information.rds')
 
 ########################################################################################
 # Setaria Shiny Application -ui.R
